@@ -1,50 +1,55 @@
 // mongodb
 const { MongoClient } = require("mongodb");
 const uri = 'mongodb://localhost:27017';
-const client = new MongoClient(uri);
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 const DB = 'bugle';
 const COLLECTION = 'ads';
 
-async function trackClick(adAlt) {
+async function trackClicks(adAlt) {
     try {
-        client.connect();
-        client.db(DB).collection(COLLECTION)
-            .findOne({ 'alt': adAlt })
-            .then( results => {
-                results.times_clicked++;
-                console.log(`Clicked ${adAlt}`);
-                client.db(DB).collection(COLLECTION)
-                    .updateOne({ 'alt': adAlt }, { $set: results })
-                    .then( results => console.log(results) )
-                    .catch( error => console.error(error) );
-            })
-            .catch( error => console.error(error) );
-    } catch (error) {console.error(error);} finally {client.close();}
+        await client.connect();
+        const collection = client.db(DB).collection(COLLECTION);
 
-    // clicked = document.getElementById('clicks');
-    // clicked.innerHTML = "<u>Clicks</u>";
-    // ads.forEach(ad => {
-    //     clicked.innerHTML += `<br>${ad.name}: ${ad.times_clicked}`;
-    // });
+        const ad = await collection.findOne({ 'alt': adAlt });
+        if (ad) {
+            ad.times_clicked++;
+            console.log(`Clicked ${adAlt}`);
+            await collection.updateOne({ 'alt': adAlt }, { $set: ad });
+            return ad.times_clicked;
+        } else {
+            console.error(`Ad not found: ${adAlt}`);
+            return 0;
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
+    } finally {
+        await client.close();
+    }
 }
 
 async function getAds() {
     try {
-        client.connect();
-        client.db(DB).collection(COLLECTION)
-            .find()
-            .toArray()
-            .then( results => {
-                console.log(results);
-                return results;
-            })
-            .catch( error => console.error(error) );
-    } catch (error) {console.error(error);} finally {client.close();}
+        await client.connect();
+        const collection = client.db(DB).collection(COLLECTION);
+
+        const results = await collection.find().toArray();
+        results.forEach(async (ad) => {
+            ad.times_viewed++;
+            await collection.updateOne({ 'alt': ad.alt }, { $set: ad });
+        });
+        return results;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    } finally {
+        await client.close();
+    }
 }
 
-
 // server
-let port = 3004; 
+let port = 3004;
+let hostname = 'localhost';
 const url = require('url');
 const http = require('http');
 const server = http.createServer();
@@ -62,9 +67,9 @@ server.on('request', async (request, response) => {
             response.end();
             break;
         case '/adclick':
-            await trackClick(parse.query.ad);
-            response.writeHead(200, {'Content-Type': 'application/json'});
-            response.write(JSON.stringify(await getAds()));
+            num = await trackClicks(parse.query.ad);
+            response.writeHead(200, {'Content-Type': 'text/plain'});
+            response.write(num.toString());
             response.end();
             break;
         default:
@@ -72,4 +77,8 @@ server.on('request', async (request, response) => {
             response.end();
             break;
     }
+});
+
+server.listen(port, hostname, () => {
+    console.log(`Ads server running at http://${hostname}:${port}/`);
 });
