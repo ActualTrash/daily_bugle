@@ -1,63 +1,32 @@
 <script>
     import { Icon, PaperAirplane } from 'svelte-hero-icons';
     import Ad from '$lib/components/Ad.svelte'
-    const articles = [
-        {
-            'id': '0',
-            'title': 'a title',
-            'teaser': 'this is a teaser',
-            'author': 'Chase',
-            'body': 'lorum arstoinaftyuafw ilhuafwihut fauiwufht h',
-            'date_modified': '12/3/2023',
-        },
-        {
-            'id': '1',
-            'title': 'a title 1',
-            'teaser': 'this is a teaser 1',
-            'author': 'Chase 1',
-            'body': 'lorum arstoinaftyuafw ilhuafwihut fauiwufht h 1',
-            'date_modified': '12/3/2023 1',
-        },
-        {
-            'id': '2',
-            'title': 'a title 2',
-            'teaser': 'this is a teaser 2',
-            'author': 'Chase 2',
-            'body': 'lorum arstoinaftyuafw ilhuafwihut fauiwufht h 2',
-            'date_modified': '12/3/2023 2',
-        },
-        {
-            'id': '3',
-            'title': 'a title 3',
-            'teaser': 'this is a teaser 3',
-            'author': 'Chase 3',
-            'body': 'lorum arstoinaftyuafw ilhuafwihut fauiwufht h 3',
-            'date_modified': '12/3/2023 3',
-        },
-    ];
     export let data;
     console.log(data);
-    const article = articles[data.articleId];
 
+    let article;
+    async function onload() {
+        fetch(`/api/articles?article_id=${data.articleId}`)
+            .then(res => res.json())
+            .then(d => {
+                article = d;
+            });
+        render_comments();
+    }
 
     // ---- Comments ----
     let comment = ''; // content of the new comment
+    let comments = [];
 
-    let comments = [
-            {'contributer': 'neil', 'comment': 'arsoitnawfotyafw hatwihufwtula wfihulawihult aihulfthi ula'},
-            {'contributer': 'neil', 'comment': 'arsoitnawfotyafw hatwihufwtula wfihulawihult aihulfthi ula'},
-            {'contributer': 'neil', 'comment': 'arsoitnawfotyafw hatwihufwtula wfihulawihult aihulfthi ula'},
-    ];
-
-    function render_comments() {
-        fetch(`/api/articles/comment?article_id=${article.id}`)
+    async function render_comments() {
+        fetch(`/api/articles/comment?article_id=${data.articleId}`)
             .then(res => res.json())
             .then(data => {
                 comments = data;
             });
     }
 
-    function add_comment() {
+    async function add_comment() {
         fetch('/api/articles/comment', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -71,10 +40,10 @@
             comment = '';
         });
     }
-
 </script>
 
-<div class="container mx-auto flex justify-center my-5 space-y-10 flex-col">
+<div use:onload class="container mx-auto flex justify-center my-5 space-y-10 flex-col">
+    {#if article}
         <div class="card p-10 flex">
             <div class="w-full">
                 <header class="card-header">
@@ -99,6 +68,7 @@
             -->
 
             <div class="space-y-2 w-full">
+                {#if data.auth }
                 <h2 class="h2">Comments</h2>
                 <!-- Comment field -->
                 <div class="input-group input-group-divider grid-cols-[1fr_auto]">
@@ -108,7 +78,7 @@
                 </div>
 
                 <!-- Comment list -->
-                <div use:render_comments class="card">
+                <div class="card">
                     {#each comments as c, i }
                     <div class="p-2 w-full">
                         <section class="p-3">
@@ -118,11 +88,17 @@
                     </div>
                     {/each}
                 </div>
+                {/if}
             </div>
 
             <!-- Ads -->
             <div class="w-64">
-                <Ad />
+                {#if data.auth && data.auth.role === "author"}
+                    <a href="/edit/{data.articleId}" class="btn variant-filled-primary">Edit Article</a>
+                {:else}
+                    <Ad />
+                {/if}
             </div>
         </div>
+    {/if}
 </div>

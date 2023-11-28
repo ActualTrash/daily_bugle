@@ -30,24 +30,27 @@ ads = [
 articles = [
     {
         title: 'The Daily Bugle',
+        teaser: 'The Daily Bugle',
+        body: 'This is the first article in the Daily Bugle.'
         author: 'J. Jonah Jameson',
         date_created: new Date().toLocaleString(),
         date_modified: new Date().toLocaleString(),
-        body: 'This is the first article in the Daily Bugle.'
     },
     {
         title: 'Spider-Man',
+        teaser: 'The Daily Bugle',
+        body: 'Look at these cool photos I took!'
         author: 'Peter Parker',
         date_created: new Date().toLocaleString(),
         date_modified: new Date().toLocaleString(),
-        body: 'Look at these cool photos I took!'
     },
     {
         title: 'The Avengers',
+        teaser: 'The Daily Bugle',
+        body: 'I could literally buy the Daily Bugle.'
         author: 'Tony Stark',
         date_created: new Date().toLocaleString(),
         date_modified: new Date().toLocaleString(),
-        body: 'I could literally buy the Daily Bugle.'
     }
 ];
 

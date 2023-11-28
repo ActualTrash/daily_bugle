@@ -2,11 +2,11 @@ FROM node:latest
 
 WORKDIR /app
 
-COPY ./ads.js /app
+COPY ./auth.js /app
 COPY ./package*.json /app
 
 RUN npm install
 
-# EXPOSE 3004
+# EXPOSE 3003
 
-CMD ["node", "--trace-warnings", "ads.js"]
+CMD ["node", "--trace-warnings", "auth.js"]

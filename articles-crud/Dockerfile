@@ -7,6 +7,6 @@ COPY ./package*.json /app
 
 RUN npm install
 
-EXPOSE 3003
+# EXPOSE 3003
 
 CMD ["node", "--trace-warnings", "article.js"]

@@ -2,14 +2,14 @@
     export let article_id: String = 'none';
     let src: String = '';
     let ad_id: String = '';
+    let ad_path: String = '';
 
     function onload() {
-        src = '/fsh.png';
         fetch('/api/ads/ad')
         .then(res => res.json())
         .then(data => {
             ad_id = data._id;
-            ad_path = data.alt;
+            ad_path = data.path;
         });
     }
 
@@ -23,7 +23,7 @@
     }
 </script>
 
-<img use:onload {src} alt="ad" on:click={handleClick} />
+<img use:onload src={'/' + ad_path} alt="ad" on:click={handleClick} />
 <small>Advertisement</small>
 
 <!--

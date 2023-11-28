@@ -25,6 +25,9 @@
                 <LightSwitch />
                 {#if data.auth !== null}
                     <p>Welcome {data.auth.username}</p>
+                    {#if data.auth.role === 'author' }
+                    <a href="/new" class="btn variant-filled-primary">New Article</a>
+                    {/if}
                     <a href="/logout" class="btn variant-filled">Logout</a>
                 {:else}
                     <a href="/login" class="btn variant-filled">Login</a>

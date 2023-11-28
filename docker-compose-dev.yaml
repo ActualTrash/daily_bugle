@@ -3,13 +3,13 @@ version: '3.1'
 services:
 
   apache:
-    build: apache
+    build: ./apache
     restart: always
     ports:
       - 8000:80
 
   ads:
-    build: ads
+    build: ./ads
     restart: always
 
   articles:
@@ -21,5 +21,9 @@ services:
     restart: always
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     restart: always
+    volumes:
+      - ./frontend:/app

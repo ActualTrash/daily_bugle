@@ -19,6 +19,7 @@ async function trackClicks(adPath) {
 
         if (ad) {
             ad.times_clicked++;
+            console.log(ad);
             console.log(`Clicked ${ad.path}`);
             ret = ad.times_clicked;
 
@@ -104,7 +105,7 @@ async function getRandomName() {
         await client.close();
     }
 
-    return ret.path;
+    return {'_id': ret.path, 'name': ret.name, 'path': ret.path };
 }
 
 async function recordEvent(event, type) {
@@ -178,15 +179,14 @@ server.on('request', async (request, response) => {
         case '/ad':
             response.writeHead(200, {'Content-Type': 'application/json'});
             let write;
-            await recordEvent(parse.query, 'view');
-            if (parse.query.ad) {
+            if (parse.query.ad_id) {
                 write = await getAd(parse.query.ad_id);
-            }
-            else {
+                await recordEvent(parse.query, 'view');
+            } else {
                 console.log('In /ad, no ad specified, returning random ad');
                 write = await getRandomName();
             }
-            response.write(write.toString());
+            response.write(JSON.stringify(write));
             response.end();
             break;
         default:
