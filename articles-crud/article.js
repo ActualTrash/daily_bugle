@@ -28,7 +28,7 @@ app.post('/', async (request, response) => {
     // Create an object to match article object in mongo
     const article = {
         'title': title,
-        'author': request,
+        'author': author,
         'date_created': date_modified,
         'date_modified': date_modified,
         'body': body,
@@ -83,7 +83,7 @@ app.put('/', async ( request, response) => {
     // Create an object to match article object in mongo
     const newArticle = {
         'title': title,
-        'author': request,
+        'author': author,
         'date_modified': date_modified,
         'body': body,
     };
