@@ -64,12 +64,55 @@ async function getAds() {
     return results;
 }
 
+async function getAd(adAlt) {
+    let ret;
+
+    try {
+        await client.connect();
+        const collection = client.db(DB).collection(COLLECTION);
+        ret = await collection.findOne({ 'alt': adAlt });
+        ret.times_viewed++;
+        await collection.updateOne({ 'alt': adAlt }, { $set: ret });
+    }
+    catch (error) {
+        console.error(error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+
+    return ret;
+}
+
+async function getRandomName() {
+    let ret;
+
+    try {
+        await client.connect();
+        const collection = client.db(DB).collection(COLLECTION);
+        const ads = await collection.find().toArray();
+        const index = Math.floor(Math.random() * ads.length);
+        ret = ads[index];
+        ret.times_viewed++;
+        await collection.updateOne({ 'alt': ret.alt }, { $set: ret });
+    }
+    catch (error) {
+        console.error(error);
+        throw error;
+    } finally {
+        await client.close();
+    }
+
+    return ret.alt;
+}
+
 
 // server
 let port = 3004;
 let hostname = '0.0.0.0';
 const url = require('url');
 const http = require('http');
+const { write } = require("fs");
 const server = http.createServer();
 server.on('error', error => console.error(error.stack));
 
@@ -89,6 +132,18 @@ server.on('request', async (request, response) => {
             ret = await trackClicks(parse.query.ad);
             response.writeHead(200, {'Content-Type': 'text/plain'});
             response.write(ret.toString());
+            response.end();
+            break;
+        case '/ad':
+            response.writeHead(200, {'Content-Type': 'application/json'});
+            let write;
+            if (parse.query.ad) {
+                write = JSON.stringify(await getAd(parse.query.ad));
+            }
+            else {
+                write = await getRandomName();
+            }
+            response.write(write);
             response.end();
             break;
         default:
