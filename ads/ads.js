@@ -1,6 +1,6 @@
 // mongodb
 const { MongoClient } = require("mongodb");
-const uri = 'mongodb://localhost:27017';
+const uri = 'mongodb://10.10.140.27:27017';
 const client = new MongoClient(uri);
 const DB = 'bugle';
 const COLLECTION = 'ads';
