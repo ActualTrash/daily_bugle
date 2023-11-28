@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Bugle</title>
+    <script src="ads.js"></script>
+    <style>
+        img {
+          width: 100px;
+          height: auto;
+          padding: 20px;
+        }
+        .ad {
+            border: 1px solid;
+            margin: auto;
+            width: 35%;
+            padding: 10px;
+        }
+        .center {
+            text-align: center;
+            display:inline-block;
+            margin: auto;
+            width: 100%;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h4 class="center">Our Sponsors:</h4>
+    <div class="ad">
+        <a href="#" onclick="trackClick('oscorp');">
+            <img src="images/oscorp.webp" alt="oscorp">
+        </a>
+        <a href="#" onclick="trackClick('stark');">
+            <img src="images/stark.jpeg" alt="stark">
+        </a>
+        <a href="#" onclick="trackClick('shield');">
+            <img src="images/shield.png" alt="shield">
+        </a>
+        <p id="clicks" class="center"></p>
+
+    </div>
+
+</body>
+</html>

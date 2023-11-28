@@ -1,0 +1,12 @@
+FROM node:latest
+
+WORKDIR /app
+
+COPY ./ads.js /app
+COPY ./package*.json /app
+
+RUN npm install
+
+EXPOSE 3004
+
+CMD ["node", "--trace-warnings", "ads.js"]
