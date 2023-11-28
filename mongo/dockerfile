@@ -1,0 +1,7 @@
+FROM mongo:latest
+
+ENV MONGO_INITDB_DATABASE=bugle
+
+COPY ./init.js /docker-entrypoint-initdb.d/
+
+EXPOSE 27017
