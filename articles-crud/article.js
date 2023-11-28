@@ -87,7 +87,7 @@ app.put('/', async ( request, response) => {
         'body': body,
     };
 
-    console.log(`Updating article ${_id}. New content:\n  title: ${title}\n  author: ${author}\n  date_modified: ${date_modified}\n  body: ${body}`
+    console.log(`Updating article ${_id}. New content:\n  title: ${title}\n  author: ${author}\n  date_modified: ${date_modified}\n  body: ${body}`);
     const articleFilter = { '_id': id }; // the article we are updating
     try {
         await client.connect();
