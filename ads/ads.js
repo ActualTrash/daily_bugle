@@ -1,55 +1,73 @@
 // mongodb
 const { MongoClient } = require("mongodb");
-const uri = 'mongodb://localhost:27017';
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const uri = 'mongodb://192.168.0.182:27017';
+const client = new MongoClient(uri);
 const DB = 'bugle';
 const COLLECTION = 'ads';
 
 async function trackClicks(adAlt) {
+    let ret = 0;
+    // console.log(`Tracking clicks for ${adAlt}`); // debug
+
     try {
         await client.connect();
-        const collection = client.db(DB).collection(COLLECTION);
+        // console.log(`Connected to ${uri}`); // debug
 
+        const collection = client.db(DB).collection(COLLECTION);
         const ad = await collection.findOne({ 'alt': adAlt });
+
         if (ad) {
             ad.times_clicked++;
             console.log(`Clicked ${adAlt}`);
+            ret = ad.times_clicked;
+
             await collection.updateOne({ 'alt': adAlt }, { $set: ad });
-            return ad.times_clicked;
         } else {
             console.error(`Ad not found: ${adAlt}`);
-            return 0;
+            ret = `Ad not found: ${adAlt}. Remember the format is /adclick?ad=<name>`
         }
     } catch (error) {
         console.error(error);
         throw error;
     } finally {
         await client.close();
+        // console.log(`Closed connection to ${uri}`); // debug
     }
+
+    return ret;
 }
 
 async function getAds() {
+    let results;
+
     try {
         await client.connect();
+        // console.log(`Connected to ${uri}`); // debug
         const collection = client.db(DB).collection(COLLECTION);
 
-        const results = await collection.find().toArray();
-        results.forEach(async (ad) => {
+        results = await collection.find().toArray();
+
+        for (const ad of results) {
             ad.times_viewed++;
             await collection.updateOne({ 'alt': ad.alt }, { $set: ad });
-        });
-        return results;
+        }
+
+        // console.log(`Transaction complete`); // debug
     } catch (error) {
         console.error(error);
         throw error;
     } finally {
         await client.close();
+        // console.log(`Closed connection to ${uri}`); // debug
     }
+
+    return results;
 }
+
 
 // server
 let port = 3004;
-let hostname = 'localhost';
+let hostname = '0.0.0.0';
 const url = require('url');
 const http = require('http');
 const server = http.createServer();
@@ -67,9 +85,10 @@ server.on('request', async (request, response) => {
             response.end();
             break;
         case '/adclick':
-            num = await trackClicks(parse.query.ad);
+            // console.log(`Ad clicked: ${parse.query}`); //debug
+            ret = await trackClicks(parse.query.ad);
             response.writeHead(200, {'Content-Type': 'text/plain'});
-            response.write(num.toString());
+            response.write(ret.toString());
             response.end();
             break;
         default:

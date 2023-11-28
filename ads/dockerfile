@@ -8,4 +8,4 @@ RUN npm install mongodb url http express
 
 EXPOSE 3004
 
-CMD ["node", "ads.js"]
+CMD ["node", "--trace-warnings", "ads.js"]
