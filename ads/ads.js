@@ -103,7 +103,7 @@ async function getRandomName() {
         await client.close();
     }
 
-    return ret.alt;
+    return {'alt': ret.alt, '_id': ret._id};
 }
 
 
@@ -138,12 +138,13 @@ server.on('request', async (request, response) => {
             response.writeHead(200, {'Content-Type': 'application/json'});
             let write;
             if (parse.query.ad) {
-                write = JSON.stringify(await getAd(parse.query.ad));
+                write = await getAd(parse.query.ad);
             }
             else {
+                console.log('In /ad, no ad specified, returning random ad');
                 write = await getRandomName();
             }
-            response.write(write);
+            response.write(JSON.stringify(write));
             response.end();
             break;
         default:
