@@ -1,30 +1,31 @@
 // mongodb
 const { MongoClient } = require("mongodb");
-const uri = 'mongodb://192.168.0.182:27017';
+const uri = 'mongodb://localhost:27017';
 const client = new MongoClient(uri);
 const DB = 'bugle';
 const COLLECTION = 'ads';
+const EVENTCOLLECTION = 'ad_events';
 
-async function trackClicks(adAlt) {
+async function trackClicks(adPath) {
     let ret = 0;
-    // console.log(`Tracking clicks for ${adAlt}`); // debug
+    console.log(`Tracking clicks for ${adPath}`); // debug
 
     try {
         await client.connect();
         // console.log(`Connected to ${uri}`); // debug
 
         const collection = client.db(DB).collection(COLLECTION);
-        const ad = await collection.findOne({ 'alt': adAlt });
+        const ad = await collection.findOne({ 'path': adPath });
 
         if (ad) {
             ad.times_clicked++;
-            console.log(`Clicked ${adAlt}`);
+            console.log(`Clicked ${ad.path}`);
             ret = ad.times_clicked;
 
-            await collection.updateOne({ 'alt': adAlt }, { $set: ad });
+            await collection.updateOne({ 'path': adPath }, { $set: ad });
         } else {
-            console.error(`Ad not found: ${adAlt}`);
-            ret = `Ad not found: ${adAlt}. Remember the format is /adclick?ad=<name>`
+            console.error(`Ad not found: ${adPath}`);
+            ret = `Ad not found: ${adPath}`
         }
     } catch (error) {
         console.error(error);
@@ -49,7 +50,7 @@ async function getAds() {
 
         for (const ad of results) {
             ad.times_viewed++;
-            await collection.updateOne({ 'alt': ad.alt }, { $set: ad });
+            await collection.updateOne({ 'path': ad.path }, { $set: ad });
         }
 
         // console.log(`Transaction complete`); // debug
@@ -64,15 +65,15 @@ async function getAds() {
     return results;
 }
 
-async function getAd(adAlt) {
+async function getAd(adPath) {
     let ret;
 
     try {
         await client.connect();
         const collection = client.db(DB).collection(COLLECTION);
-        ret = await collection.findOne({ 'alt': adAlt });
+        ret = await collection.findOne({ 'path': adPath });
         ret.times_viewed++;
-        await collection.updateOne({ 'alt': adAlt }, { $set: ret });
+        await collection.updateOne({ 'path': adPath }, { $set: ret });
     }
     catch (error) {
         console.error(error);
@@ -81,7 +82,7 @@ async function getAd(adAlt) {
         await client.close();
     }
 
-    return ret;
+    return {"_id":ret.path, "path":ret.path};
 }
 
 async function getRandomName() {
@@ -94,7 +95,7 @@ async function getRandomName() {
         const index = Math.floor(Math.random() * ads.length);
         ret = ads[index];
         ret.times_viewed++;
-        await collection.updateOne({ 'alt': ret.alt }, { $set: ret });
+        await collection.updateOne({ 'path': ret.path }, { $set: ret });
     }
     catch (error) {
         console.error(error);
@@ -103,7 +104,47 @@ async function getRandomName() {
         await client.close();
     }
 
-    return {'alt': ret.alt, '_id': ret._id};
+    return ret.path;
+}
+
+async function recordEvent(event, type) {
+    // console.log(event) //debug
+    event.date_created = new Date().toLocaleString();
+    event.event_type = type;
+
+    let id;
+    try {
+        await client.connect();
+        const collection = client.db(DB).collection(COLLECTION);
+        id = await collection.findOne({ 'path': event.ad_id }) // the _id is actually the path text
+        if (id) {
+            event.ad_id = id._id;
+        }
+        else {
+            console.error(`Ad not found: ${event._id}`);
+            throw `Ad not found: ${event._id}`;
+        }
+    }
+    catch (error) {
+        console.error(error);
+        throw error;
+    }
+    finally {
+        await client.close();
+    }
+
+    try {
+        await client.connect();
+        const collection = client.db(DB).collection(EVENTCOLLECTION);
+        console.log(event)
+        await collection.insertOne(event);
+    }
+    catch (error) {
+        console.error(error);
+        throw error;
+    } finally {
+        await client.close();
+    }
 }
 
 
@@ -112,7 +153,6 @@ let port = 3004;
 let hostname = '0.0.0.0';
 const url = require('url');
 const http = require('http');
-const { write } = require("fs");
 const server = http.createServer();
 server.on('error', error => console.error(error.stack));
 
@@ -129,7 +169,8 @@ server.on('request', async (request, response) => {
             break;
         case '/adclick':
             // console.log(`Ad clicked: ${parse.query}`); //debug
-            ret = await trackClicks(parse.query.ad);
+            ret = await trackClicks(parse.query.ad_id);
+            await recordEvent(parse.query, 'click');
             response.writeHead(200, {'Content-Type': 'text/plain'});
             response.write(ret.toString());
             response.end();
@@ -137,14 +178,15 @@ server.on('request', async (request, response) => {
         case '/ad':
             response.writeHead(200, {'Content-Type': 'application/json'});
             let write;
+            await recordEvent(parse.query, 'view');
             if (parse.query.ad) {
-                write = await getAd(parse.query.ad);
+                write = await getAd(parse.query.ad_id);
             }
             else {
                 console.log('In /ad, no ad specified, returning random ad');
                 write = await getRandomName();
             }
-            response.write(JSON.stringify(write));
+            response.write(write.toString());
             response.end();
             break;
         default:
